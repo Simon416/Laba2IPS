@@ -3,9 +3,11 @@
 #include <cilk/reducer_max.h>
 #include <cilk/reducer_min.h>
 #include <cilk/reducer_vector.h>
+#include <iostream>
 #include <chrono>
 
 using namespace std::chrono;
+using namespace std;
 
 /// Функция ReducerMaxTest() определяет максимальный элемент массива,
 /// переданного ей в качестве аргумента, и его позицию
@@ -18,8 +20,20 @@ void ReducerMaxTest(int *mass_pointer, const long size)
 	{
 		maximum->calc_max(i, mass_pointer[i]);
 	}
-	printf("Maximal element = %d has index = %d\n\n",
-		maximum->get_reference(), maximum->get_index_reference());
+	cout << "Maximal element = " << maximum->get_reference() << " has index = " << maximum->get_index_reference() << endl;
+}
+
+/// Задание - поиск минимального элемента массива
+/// Функция ReducerMinTest() определяет минимальный элемент массива
+void ReducerMinTest(int *mass_pointer, const long size)
+{
+	cilk::reducer<cilk::op_min_index<long, int>> minimum;
+	cilk_for(long i = 0; i < size; ++i)
+	{
+		minimum->calc_min(i, mass_pointer[i]);
+	}
+	cout << "Minimal element = " << minimum->get_reference() << " has index = " << minimum->get_index_reference() << endl;
+	cout << endl;
 }
 
 /// Функция ParallelSort() сортирует массив в порядке возрастания
@@ -58,10 +72,13 @@ int main()
 
 	mass_begin = mass;
 	mass_end = mass_begin + mass_size;
+
 	ReducerMaxTest(mass, mass_size);
+	ReducerMinTest(mass, mass_size); /// Поиск минимального элемента массива
 
 	ParallelSort(mass_begin, mass_end);
 	ReducerMaxTest(mass, mass_size);
+	ReducerMinTest(mass, mass_size); /// Поиск минимального элемента массива
 
 	delete[]mass;
 	return 0;
