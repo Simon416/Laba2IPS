@@ -61,7 +61,7 @@ int main()
 	__cilkrts_set_param("nworkers", "4");
 
 	long i;
-	const long mass_size = 10000;
+	const long mass_size = 1000000;
 	int *mass_begin, *mass_end;
 	int *mass = new int[mass_size];
 
@@ -73,12 +73,22 @@ int main()
 	mass_begin = mass;
 	mass_end = mass_begin + mass_size;
 
+	duration<double> duration; /// Перемнная для измерения времени
+
 	ReducerMaxTest(mass, mass_size);
 	ReducerMinTest(mass, mass_size); /// Поиск минимального элемента массива
 
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	ParallelSort(mass_begin, mass_end);
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	duration = (t2 - t1);
+
 	ReducerMaxTest(mass, mass_size);
 	ReducerMinTest(mass, mass_size); /// Поиск минимального элемента массива
+
+	/// Выводим время работы функции ParallelSort()
+	cout << "Duration is: " << duration.count() << " seconds " << endl;
+	cout << endl;
 
 	delete[]mass;
 	return 0;
