@@ -6,8 +6,8 @@
 #include <iostream>
 #include <chrono>
 
-using namespace std::chrono;
 using namespace std;
+using namespace chrono;
 
 /// Функция ReducerMaxTest() определяет максимальный элемент массива,
 /// переданного ей в качестве аргумента, и его позицию
@@ -23,7 +23,7 @@ void ReducerMaxTest(int *mass_pointer, const long size)
 	cout << "Maximal element = " << maximum->get_reference() << " has index = " << maximum->get_index_reference() << endl;
 }
 
-/// Задание - поиск минимального элемента массива
+
 /// Функция ReducerMinTest() определяет минимальный элемент массива
 void ReducerMinTest(int *mass_pointer, const long size)
 {
@@ -52,6 +52,42 @@ void ParallelSort(int *begin, int *end)
 	}
 }
 
+/// Функция CompareForAndCilk_For() функция должна выводить на консоль время работы стандартного цикла for, 
+/// в котором заполняется случайными значениями и время работы параллельного цикла cilk_for 
+
+int *CompareForAndCilk_For(size_t sz)
+{
+	cout << "The result of the function CompareForAndCilk_For()" << endl;
+
+	duration<double> duration, /// Перемнная для измерения времени работы цикла for
+		durationCilk; /// Перемнная для измерения времени работы цикла cilk_for
+	cilk::reducer<cilk::op_vector<int>>red_vec; /// Заполняемый вектор в цикле cilk_for
+	vector <int> vec;/// Заполняемый вектор в цикле for
+
+	/// Измеряем время работы цикла for
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	for (long i = 0; i < sz; ++i)
+	{
+		vec.push_back(rand() % 25000 + 1);
+	}
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	duration = (t2 - t1);
+	// Измеряем время работы цикла cilk_for
+	high_resolution_clock::time_point t3 = high_resolution_clock::now();
+	cilk_for(long i = 0; i != sz; ++i)
+	{
+		red_vec->push_back(rand() % 25000 + 1);
+	}
+	high_resolution_clock::time_point t4 = high_resolution_clock::now();
+	durationCilk = (t4 - t3);
+
+	/// Выводим результат измерения времени
+	cout << "Duration is: " << duration.count() << " seconds (the standard for loop)" << endl;
+	cout << "Duration is: " << durationCilk.count() << " seconds (cilk_for loop)" << endl;
+	cout << endl;
+
+	return 0;
+}
 
 int main()
 {
@@ -60,36 +96,44 @@ int main()
 	// устанавливаем количество работающих потоков = 4
 	__cilkrts_set_param("nworkers", "4");
 
-	long i;
-	const long mass_size = 1000000;
-	int *mass_begin, *mass_end;
-	int *mass = new int[mass_size];
+	/// Задаем размерность массива
+	size_t sz;
+	cout << "Specify the size of the array: ";
+	cin >> sz;
 
-	for (i = 0; i < mass_size; ++i)
+	int *mass_begin, *mass_end;
+	int *mass = new int[sz];
+	mass_begin = mass;
+	mass_end = mass_begin + sz;
+	for (long i = 0; i < sz; ++i)
 	{
 		mass[i] = (rand() % 25000) + 1;
 	}
-
-	mass_begin = mass;
-	mass_end = mass_begin + mass_size;
+	
 
 	duration<double> duration; /// Перемнная для измерения времени
 
-	ReducerMaxTest(mass, mass_size);
-	ReducerMinTest(mass, mass_size); /// Поиск минимального элемента массива
+	ReducerMaxTest(mass, sz); /// Поиск максимального элемента массива
+	ReducerMinTest(mass, sz); /// Поиск минимального элемента массива
 
+
+	// измерение работы функции ParallelSort
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	ParallelSort(mass_begin, mass_end);
+	ParallelSort(mass_begin, mass_end); /// Сортировка массива
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	duration = (t2 - t1);
 
-	ReducerMaxTest(mass, mass_size);
-	ReducerMinTest(mass, mass_size); /// Поиск минимального элемента массива
-
+	// поиск минимального элемента после сортировки массива
+	ReducerMaxTest(mass, sz); /// Поиск максимального элемента массива
+	ReducerMinTest(mass, sz); /// Поиск минимального элемента массива
 	/// Выводим время работы функции ParallelSort()
-	cout << "Duration is: " << duration.count() << " seconds " << endl;
+	cout << "Duration is: " << duration.count() << " seconds (function ParallelSort())" << endl;
 	cout << endl;
 
+	/// Задание - сравнение времени работы циклов for и cilk_for
+	CompareForAndCilk_For(sz);
+
 	delete[]mass;
+	system("pause");
 	return 0;
 }
